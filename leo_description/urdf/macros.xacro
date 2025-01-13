@@ -163,6 +163,7 @@
     </xacro:if>
 
     <link name="${link_prefix}camera_frame"/>
+    <link name="${link_prefix}lidar_frame"/>
     <link name="${link_prefix}camera_optical_frame"/>
     <link name="${link_prefix}imu_frame"/>
 
@@ -265,6 +266,12 @@
         <child link="${link_prefix}antenna_link"/>
       </joint>
     </xacro:if>
+
+    <joint name="${joint_prefix}lidar_joint" type="fixed">
+      <origin xyz="0.0971 0 -0.0427" rpy="0 0.2094 0"/>
+      <parent link="${link_prefix}base_link"/>
+      <child link="${link_prefix}lidar_frame"/>
+    </joint>
 
     <joint name="${joint_prefix}camera_joint" type="fixed">
       <origin xyz="0.0971 0 -0.0427" rpy="0 0.2094 0"/>
@@ -486,11 +493,45 @@
           <update_rate>30</update_rate>
           <visualize>true</visualize>
           <topic>${link_prefix}camera/image_raw</topic>
-          <ignition_frame_id>${link_prefix}camera_frame</ignition_frame_id>
+          <gz_frame_id>${link_prefix}camera_frame</gz_frame_id>
+      </sensor>
+    </gazebo>
+
+    <!-- fake lidar for sim-->
+    <gazebo reference="${link_prefix}lidar_frame">
+      <sensor name='lidar_frame' type='gpu_lidar'>
+        <pose relative_to='lidar_frame'>0 0 0 0 0 0</pose>
+        <topic>${link_prefix}scan</topic>
+        <update_rate>10</update_rate>
+        <ray>
+          <scan>
+            <horizontal>
+              <samples>640</samples>
+              <resolution>1</resolution>
+              <min_angle>-1.396263</min_angle>
+              <max_angle>1.396263</max_angle>
+            </horizontal>
+            <vertical>
+              <samples>1</samples>
+              <resolution>0.01</resolution>
+              <min_angle>1</min_angle>
+              <max_angle>1</max_angle>
+            </vertical>
+          </scan>
+          <range>
+            <min>0.08</min>
+            <max>10.0</max>
+            <resolution>0.01</resolution>
+          </range>
+        </ray>
+        <always_on>true</always_on>
+        <visualize>true</visualize>
+        <gz_frame_id>${link_prefix}lidar_frame</gz_frame_id>
       </sensor>
     </gazebo>
 
     <!-- rocker differential -->
+    
     <gazebo>
       <plugin name="leo_gz::DifferentialSystem" filename="libleo_gz_differential_plugin.so">
         <jointA>rocker_L_joint</jointA>
@@ -513,7 +554,7 @@
         <visualize>true</visualize>
         <topic>${link_prefix}imu/data_raw</topic>
         <always_on>1</always_on>
-        <ignition_frame_id>${link_prefix}imu_frame</ignition_frame_id>
+        <gz_frame_id>${link_prefix}imu_frame</gz_frame_id>
       </sensor>
     </gazebo>
     <gazebo>
@@ -531,12 +572,17 @@
         <child_frame_id>${link_prefix}base_footprint</child_frame_id>
         <odom_publish_frequency>20</odom_publish_frequency>
         <topic>${link_prefix}cmd_vel</topic>
-        <odom_topic>${link_prefix}odom</odom_topic>
-        <tf_topic>${link_prefix}tf</tf_topic>
         <max_linear_acceleration>2.5</max_linear_acceleration>
         <max_angular_acceleration>3</max_angular_acceleration>
         <min_linear_acceleration>-2.5</min_linear_acceleration>
         <min_angular_acceleration>-3</min_angular_acceleration>
+      </plugin>
+      <plugin filename="libignition-gazebo-odometry-publisher-system.so" name="ignition::gazebo::systems::OdometryPublisher">
+        <update_frequency>10</update_frequency>
+        <odom_topic>${link_prefix}true_pose</odom_topic>
+        <odom_frame>world</odom_frame>
+        <robot_base_frame>${link_prefix}base_footprint</robot_base_frame>
+        <tf_topic>${link_prefix}tf</tf_topic>
       </plugin>
     </gazebo>
   </xacro:macro>
