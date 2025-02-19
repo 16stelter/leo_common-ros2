@@ -9,7 +9,6 @@
                        joint_prefix:=''
                        imu_translation:='0.0628 -0.0314 -0.0393'
                        mecanum_wheels:=false">
-
     <xacro:macro name="rocker_link" params="name">
       <link name="${link_prefix}rocker_${name}_link">
         <inertial>
@@ -103,6 +102,7 @@
     </xacro:if>
 
     <link name="${link_prefix}base_link">
+      <pose>0 0 0.19783 0 0 0</pose>
       <inertial>
         <mass value="1.584994"/>
         <origin xyz="-0.019662 0.011643 -0.031802"/>
@@ -166,6 +166,47 @@
     <link name="${link_prefix}lidar_frame"/>
     <link name="${link_prefix}camera_optical_frame"/>
     <link name="${link_prefix}imu_frame"/>
+    <link name="${joint_prefix}rotor_FL_link">
+      <inertial>
+        <mass value="0.1"/>
+        <origin xyz="0 0 0"/>
+        <inertia
+          ixx="0.0001" ixy="0" ixz="0"
+          iyy="0.0001" iyz="0"
+          izz="0.0001"/>
+      </inertial>
+    </link>
+    <link name="${joint_prefix}rotor_FR_link">
+      <inertial>
+        <mass value="0.1"/>
+        <origin xyz="0 0 0"/>
+        <inertia
+          ixx="0.0001" ixy="0" ixz="0"
+          iyy="0.0001" iyz="0"
+          izz="0.0001"/>
+      </inertial>
+    </link>
+    <link name="${joint_prefix}rotor_RL_link">
+      <inertial>
+        <mass value="0.1"/>
+        <origin xyz="0 0 0"/>
+        <inertia
+          ixx="0.0001" ixy="0" ixz="0"
+          iyy="0.0001" iyz="0"
+          izz="0.0001"/>
+      </inertial>
+    </link>
+    <link name="${joint_prefix}rotor_RR_link">
+      <inertial>
+        <mass value="0.1"/>
+        <origin xyz="0 0 0"/>
+        <inertia
+          ixx="0.0001" ixy="0" ixz="0"
+          iyy="0.0001" iyz="0"
+          izz="0.0001"/>
+      </inertial>
+    </link>
+
 
     <!-- JOINTS -->
 
@@ -200,7 +241,7 @@
       <axis xyz="0 1 0"/>
       <limit effort="100.0" lower="-0.24" upper="0.24" velocity="100.0"/>
       <dynamics friction="1.0" damping="0.1"/> 
-      <mimic joint="rocker_L_joint"/>
+      <mimic joint="${joint_prefix}rocker_L_joint"/>
     </joint>
 
     <joint name="${joint_prefix}wheel_FL_joint" type="continuous">
@@ -287,21 +328,47 @@
 
     <joint name="${joint_prefix}imu_joint" type="fixed">
       <origin xyz="${imu_translation}" rpy="0 0 0"/>
-      <parent link="${link_prefix}base_link"/>
+      <parent link="${link_prefix}base_footprint"/>
       <child link="${link_prefix}imu_frame"/>
     </joint>
+
+    <joint name="${joint_prefix}rotor_FL_joint" type="continuous">
+      <parent link="${link_prefix}base_link"/>
+      <child link="${link_prefix}rotor_FL_link"/>
+      <origin xyz="0.2 0.2 0.1" rpy="0 0 0"/>
+      <axis xyz="0 0 1"/>
+    </joint>
+
+    <joint name="${joint_prefix}rotor_FR_joint" type="continuous">
+      <parent link="${link_prefix}base_link"/>
+      <child link="${link_prefix}rotor_FR_link"/>
+      <origin xyz="0.2 -0.2 0.1" rpy="0 0 0"/>
+      <axis xyz="0 0 1"/>
+    </joint>
+
+    <joint name="${joint_prefix}rotor_RL_joint" type="continuous">
+      <parent link="${link_prefix}base_link"/>
+      <child link="${link_prefix}rotor_RL_link"/>
+      <origin xyz="-0.2 0.2 0.1" rpy="0 0 0"/>
+      <axis xyz="0 0 1"/>
+    </joint>
+
+    <joint name="${joint_prefix}rotor_RR_joint" type="continuous">
+      <parent link="${link_prefix}base_link"/>
+      <child link="${link_prefix}rotor_RR_link"/>
+      <origin xyz="-0.2 -0.2 0.1" rpy="0 0 0"/>
+      <axis xyz="0 0 1"/>
+    </joint>
+
 
   </xacro:macro>
 
   <!-- LEO GAZEBO -->
 
   <xacro:macro name="leo_gazebo"
-               params="robot_ns:='''">
-
-    <xacro:property name="link_prefix" value=""/>
-    <xacro:if value="${robot_ns != '' and robot_ns != '/'}">
-      <xacro:property name="link_prefix" value="${robot_ns}/"/>
-    </xacro:if>
+               params="robot_ns:=''
+               link_prefix:=''
+               joint_prefix:=''">
 
     <!-- base ODE properties -->
     <gazebo reference="${link_prefix}base_footprint">
@@ -534,8 +601,8 @@
     
     <gazebo>
       <plugin name="leo_gz::DifferentialSystem" filename="libleo_gz_differential_plugin.so">
-        <jointA>rocker_L_joint</jointA>
-        <jointB>rocker_R_joint</jointB>
+        <jointA>${joint_prefix}rocker_L_joint</jointA>
+        <jointB>${joint_prefix}rocker_R_joint</jointB>
         <forceConstant>100.0</forceConstant>
       </plugin>
     </gazebo>
@@ -558,20 +625,19 @@
       </sensor>
     </gazebo>
     <gazebo>
-    
       <plugin
         filename="libignition-gazebo-diff-drive-system.so"
         name="ignition::gazebo::systems::DiffDrive">
-        <left_joint>wheel_FL_joint</left_joint>
-        <right_joint>wheel_FR_joint</right_joint>
-        <left_joint>wheel_RL_joint</left_joint>
-        <right_joint>wheel_RR_joint</right_joint>
+        <left_joint>${joint_prefix}wheel_FL_joint</left_joint>
+        <right_joint>${joint_prefix}wheel_FR_joint</right_joint>
+        <left_joint>${joint_prefix}wheel_RL_joint</left_joint>
+        <right_joint>${joint_prefix}wheel_RR_joint</right_joint>
         <wheel_separation>0.358</wheel_separation>
         <wheel_radius>0.0625</wheel_radius>
         <frame_id>odom</frame_id>
         <child_frame_id>${link_prefix}base_footprint</child_frame_id>
         <odom_publish_frequency>20</odom_publish_frequency>
-        <topic>${link_prefix}cmd_vel</topic>
+        <topic>${robot_ns}/cmd_vel</topic>
         <max_linear_acceleration>2.5</max_linear_acceleration>
         <max_angular_acceleration>3</max_angular_acceleration>
         <min_linear_acceleration>-2.5</min_linear_acceleration>
@@ -585,6 +651,47 @@
         <tf_topic>tf</tf_topic>
       </plugin>
     </gazebo>
+    <gazebo>
+      <plugin
+        filename="ignition-gazebo-multicopter-control-system"
+        name="ignition::gazebo::systems::MulticopterVelocityControl">
+        <robotNamespace>${robot_ns}</robotNamespace>
+        <commandSubTopic>cmd_vel</commandSubTopic>
+        <enableSubTopic>drone_enable</enableSubTopic>
+        <comLinkName>${link_prefix}base_link</comLinkName>
+        <velocityGain>4.0 4.0 4.0</velocityGain> 
+        <attitudeGain>4 5 0.3</attitudeGain> 
+        <angularRateGain>0.6 0.8 0.3</angularRateGain>
+        <maximumLinearAcceleration>5 5 5</maximumLinearAcceleration> 
+        <rotorConfiguration>
+          <rotor>
+              <jointName>${joint_prefix}rotor_FL_joint</jointName>
+              <forceConstant>1.5e-05</forceConstant>
+              <momentConstant>0.016</momentConstant>
+              <direction>1</direction>
+          </rotor>
+          <rotor>
+              <jointName>${joint_prefix}rotor_FR_joint</jointName>
+              <forceConstant>1.5e-05</forceConstant>
+              <momentConstant>0.016</momentConstant>
+              <direction>-1</direction>
+          </rotor>
+          <rotor>
+              <jointName>${joint_prefix}rotor_RL_joint</jointName>
+              <forceConstant>1.5e-05</forceConstant>
+              <momentConstant>0.016</momentConstant>
+              <direction>-1</direction>
+          </rotor>
+          <rotor>
+              <jointName>${joint_prefix}rotor_RR_joint</jointName>
+              <forceConstant>1.5e-05</forceConstant>
+              <momentConstant>0.016</momentConstant>
+              <direction>1</direction>
+          </rotor>
+        </rotorConfiguration>
+      </plugin>
+    </gazebo>
+    
   </xacro:macro>
 
   <xacro:macro name="leo_sim" 
@@ -594,16 +701,22 @@
                        mecanum_wheels:=false">
 
     <xacro:property name="link_prefix" value=""/>
+    <xacro:property name="joint_prefix" value=""/>
     <xacro:if value="${robot_ns != '' and robot_ns != '/'}">
       <xacro:property name="link_prefix" value="${robot_ns}/"/>
+      <xacro:property name="joint_prefix" value="${robot_ns}/"/>
     </xacro:if>
 
     <xacro:leo default_antenna="${default_antenna}"
                rockers_fixed="false"
                link_prefix="${link_prefix}"
+               joint_prefix="${joint_prefix}"
                mecanum_wheels="${mecanum_wheels}"/>
 
-    <xacro:leo_gazebo robot_ns="${robot_ns}"/>
+    <xacro:leo_gazebo robot_ns="${robot_ns}"
+                      link_prefix="${link_prefix}"
+                      joint_prefix="${joint_prefix}"
+              />
 
     <xacro:if value="${fixed}">
       <link name="world"/>
